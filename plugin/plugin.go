@@ -12,7 +12,6 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type GooglePlugin struct {
@@ -38,17 +37,9 @@ func (p *GooglePlugin) OnCreateCatalog(_ context.Context, req *pb.OnCreateCatalo
 		return nil, err
 	}
 
-	// Uses Google Application Default Credentials to avoid persisting secrets.
-	// As a result, create an empty set of secrets (for future case, if credentials need to be stored).
-	persistedSecrets := map[string]interface{}{}
-	persist, err := structpb.NewStruct(persistedSecrets)
-	if err != nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "failed marshaling persisted secrets: %q", err.Error())
-	}
-
 	return &pb.OnCreateCatalogResponse{
 		Persisted: &pb.HostCatalogPersisted{
-			Secrets: persist,
+			Secrets: nil,
 		},
 	}, nil
 }
@@ -59,17 +50,9 @@ func (p *GooglePlugin) OnUpdateCatalog(_ context.Context, req *pb.OnUpdateCatalo
 		return nil, status.Error(codes.FailedPrecondition, "current catalog is nil")
 	}
 
-	// Uses Google Application Default Credentials to avoid persisting secrets.
-	// As a result, create an empty set of secrets (for future case, if credentials need to be stored).
-	persistedSecrets := map[string]interface{}{}
-	persist, err := structpb.NewStruct(persistedSecrets)
-	if err != nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "failed marshaling persisted secrets: %q", err.Error())
-	}
-
 	return &pb.OnUpdateCatalogResponse{
 		Persisted: &pb.HostCatalogPersisted{
-			Secrets: persist,
+			Secrets: nil,
 		},
 	}, nil
 }

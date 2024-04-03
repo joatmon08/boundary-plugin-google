@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/boundary/sdk/pbs/controller/api/resources/hostcatalogs"
 	"github.com/hashicorp/boundary/sdk/pbs/controller/api/resources/hostsets"
-	"github.com/hashicorp/boundary/sdk/pbs/plugin"
 	pb "github.com/hashicorp/boundary/sdk/pbs/plugin"
 	"github.com/hashicorp/go-secure-stdlib/parseutil"
 	cred "github.com/joatmon08/boundary-plugin-google/internal/credential"
@@ -154,7 +153,6 @@ func TestCreateCatalog(t *testing.T) {
 		}),
 	}
 
-	secrets, err := structpb.NewStruct(map[string]interface{}{})
 	require.NoError(t, err)
 
 	cases := []struct {
@@ -187,14 +185,14 @@ func TestCreateCatalog(t *testing.T) {
 			expectedErr: "attributes.project: missing required value \"project\"",
 		},
 		{
-			name: "do not persist secrets, use gcloud ADC",
+			name: "do not persist secrets, use gcloud application default creds",
 			req: &pb.OnCreateCatalogRequest{
 				Catalog: &hostcatalogs.HostCatalog{
 					Attrs: hostCatalogAttributes,
 				},
 			},
-			expected: &plugin.HostCatalogPersisted{
-				Secrets: secrets,
+			expected: &pb.HostCatalogPersisted{
+				Secrets: nil,
 			},
 		},
 	}
@@ -235,7 +233,6 @@ func TestUpdateCatalog(t *testing.T) {
 		}),
 	}
 
-	secrets, err := structpb.NewStruct(map[string]interface{}{})
 	require.NoError(t, err)
 
 	cases := []struct {
@@ -275,7 +272,7 @@ func TestUpdateCatalog(t *testing.T) {
 				},
 			},
 			expected: &pb.HostCatalogPersisted{
-				Secrets: secrets,
+				Secrets: nil,
 			},
 		},
 	}
