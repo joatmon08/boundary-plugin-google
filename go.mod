@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/hashicorp/boundary/sdk v0.0.43
 	github.com/hashicorp/go-secure-stdlib/parseutil v0.1.8
-	github.com/kr/pretty v0.3.1
 	google.golang.org/api v0.169.0
 )
 
@@ -20,7 +19,6 @@ require (
 	github.com/googleapis/gax-go/v2 v2.12.2 // indirect
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.5 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	go.opencensus.io v0.24.0 // indirect

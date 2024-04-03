@@ -274,7 +274,7 @@ func TestUpdateCatalog(t *testing.T) {
 					Attrs: hostCatalogAttributes,
 				},
 			},
-			expected: &plugin.HostCatalogPersisted{
+			expected: &pb.HostCatalogPersisted{
 				Secrets: secrets,
 			},
 		},
@@ -296,4 +296,3 @@ func TestUpdateCatalog(t *testing.T) {
 		})
 	}
 }
-
