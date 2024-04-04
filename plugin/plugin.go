@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	compute "cloud.google.com/go/compute/apiv1"
 	"github.com/hashicorp/boundary/sdk/pbs/controller/api/resources/hostsets"
 	pb "github.com/hashicorp/boundary/sdk/pbs/plugin"
 	errors "github.com/joatmon08/boundary-plugin-google/internal/errors"
 	"github.com/mitchellh/mapstructure"
-	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -129,32 +127,18 @@ func (p *GooglePlugin) ListHosts(ctx context.Context, req *pb.ListHostsRequest) 
 			return nil, err
 		}
 
-		request := buildListInstancesRequest(setAttrs, catalogAttributes)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "error building ListInstancesRequest parameters for host set id %q: %s", set.GetId(), err)
-		}
-
-		c, err := compute.NewInstancesRESTClient(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "error creating NewInstancesRESTClient for host set id %q: %s", set.GetId(), err)
-		}
-
-		it := c.List(ctx, request)
-		for {
-			resp, err := it.Next()
-			if err == iterator.Done {
-				break
-			}
+		if setAttrs.InstanceGroup != "" {
+			hosts, err = getInstancesForInstanceGroup(ctx, set.GetId(), setAttrs, catalogAttributes)
 			if err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "error listing instances for host set id %q: %s", set.GetId(), err)
+				return nil, err
 			}
-			host, err := instanceToHost(resp)
+		} else {
+			request := buildListInstancesRequest(setAttrs, catalogAttributes)
+			hosts, err = getInstances(ctx, set.GetId(), request)
 			if err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "error processing host results for host set id %q: %s", set.GetId(), err)
+				return nil, err
 			}
-			hosts = append(hosts, host)
 		}
-
 	}
 
 	return &pb.ListHostsResponse{
@@ -171,9 +155,17 @@ func validateSet(s *hostsets.HostSet) error {
 	if err := mapstructure.Decode(attrMap, &attrs); err != nil {
 		return status.Errorf(codes.InvalidArgument, "error decoding set attributes: %s", err)
 	}
+
 	badFields := make(map[string]string)
-	if _, ok := attrMap[ConstListInstancesFilter]; ok && len(attrs.Filter) == 0 {
-		badFields[fmt.Sprintf("attributes.%s", ConstListInstancesFilter)] = "This field must be not empty."
+	_, filterSet := attrMap[ConstListInstancesFilter]
+	_, instanceGroupSet := attrMap[ConstInstanceGroup]
+
+	if instanceGroupSet && filterSet {
+		badFields["attributes"] = "must set instance group or filter, cannot set both"
+	} else if instanceGroupSet && len(attrs.InstanceGroup) == 0 {
+		badFields[fmt.Sprintf("attributes.%s", ConstInstanceGroup)] = "must not be empty."
+	} else if filterSet && len(attrs.Filter) == 0 {
+		badFields[fmt.Sprintf("attributes.%s", ConstListInstancesFilter)] = "must not be empty."
 	}
 
 	for f := range attrMap {

@@ -34,8 +34,6 @@ func getCatalogAttributes(in *structpb.Struct) (*CatalogAttributes, error) {
 			continue
 		case cred.ConstZone:
 			continue
-		case cred.ConstInstanceGroup:
-			continue
 		default:
 			badFields[fmt.Sprintf("attributes.%s", s)] = "unrecognized field"
 		}
@@ -51,15 +49,19 @@ func getCatalogAttributes(in *structpb.Struct) (*CatalogAttributes, error) {
 }
 
 type SetAttributes struct {
-	Filter string
+	Filter        string `mapstructure:"filter"`
+	InstanceGroup string `mapstructure:"instance_group"`
 }
 
 func getSetAttributes(in *structpb.Struct) (*SetAttributes, error) {
 	var setAttrs SetAttributes
 
-	unknownFields := values.StructFields(in)
 	badFields := make(map[string]string)
+	unknownFields := values.StructFields(in)
+
 	delete(unknownFields, ConstListInstancesFilter)
+	delete(unknownFields, ConstInstanceGroup)
+
 	for a := range unknownFields {
 		badFields[fmt.Sprintf("attributes.%s", a)] = "unrecognized field"
 	}
@@ -75,6 +77,12 @@ func getSetAttributes(in *structpb.Struct) (*SetAttributes, error) {
 		switch filterVal := filtersRaw.(type) {
 		case string:
 			inMap[ConstListInstancesFilter] = string(filterVal)
+		}
+	}
+	if instanceGroupRaw, ok := inMap[ConstInstanceGroup]; ok {
+		switch instanceGroupValue := instanceGroupRaw.(type) {
+		case string:
+			inMap[ConstInstanceGroup] = string(instanceGroupValue)
 		}
 	}
 

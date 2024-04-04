@@ -9,9 +9,8 @@ import (
 )
 
 type CredentialAttributes struct {
-	Project       string
-	Zone          string
-	InstanceGroup string
+	Project string
+	Zone    string
 }
 
 func GetCredentialAttributes(in *structpb.Struct) (*CredentialAttributes, error) {
@@ -27,18 +26,12 @@ func GetCredentialAttributes(in *structpb.Struct) (*CredentialAttributes, error)
 		badFields[fmt.Sprintf("attributes.%s", ConstZone)] = err.Error()
 	}
 
-	instanceGroup, err := values.GetStringValue(in, ConstInstanceGroup, false)
-	if err != nil {
-		badFields[fmt.Sprintf("attributes.%s", ConstInstanceGroup)] = err.Error()
-	}
-
 	if len(badFields) > 0 {
 		return nil, errors.InvalidArgumentError("Error in the attributes provider", badFields)
 	}
 
 	return &CredentialAttributes{
-		Project:       project,
-		Zone:          zone,
-		InstanceGroup: instanceGroup,
+		Project: project,
+		Zone:    zone,
 	}, nil
 }

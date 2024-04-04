@@ -27,11 +27,10 @@ func TestGetCatalogAttributes(t *testing.T) {
 			name: "unknown fields",
 			in: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"project":        structpb.NewStringValue("test-12345"),
-					"zone":           structpb.NewStringValue("us-central-1a"),
-					"instance_group": structpb.NewStringValue("example"),
-					"foo":            structpb.NewBoolValue(true),
-					"bar":            structpb.NewBoolValue(true),
+					"project": structpb.NewStringValue("test-12345"),
+					"zone":    structpb.NewStringValue("us-central-1a"),
+					"foo":     structpb.NewBoolValue(true),
+					"bar":     structpb.NewBoolValue(true),
 				},
 			},
 			expectedErrContains: "attributes.bar: unrecognized field, attributes.foo: unrecognized field",
@@ -77,6 +76,15 @@ func TestGetSetAttributes(t *testing.T) {
 			},
 			expected: &SetAttributes{
 				Filter: "tags.items=my-tag AND -tags.items=my-other-tag) OR tags.items=alternative-tag",
+			},
+		},
+		{
+			name: "example instance group",
+			in: map[string]any{
+				ConstInstanceGroup: "test",
+			},
+			expected: &SetAttributes{
+				InstanceGroup: "test",
 			},
 		},
 		{

@@ -93,14 +93,14 @@ func TestListHosts(t *testing.T) {
 			},
 		},
 		{
-			name: "get one instance",
+			name: "get one instance by name",
 			req: &pb.ListHostsRequest{
 				Catalog: &hostcatalogs.HostCatalog{
 					Attrs: hostCatalogAttributes,
 				},
 				Sets: []*hostsets.HostSet{
 					{
-						Id: "get-all-instances",
+						Id: "get-one-instance-by-name",
 						Attrs: &hostsets.HostSet_Attributes{
 							Attributes: wrapMap(t, map[string]interface{}{
 								ConstListInstancesFilter: "name = boundary-1",
@@ -114,6 +114,54 @@ func TestListHosts(t *testing.T) {
 					Name: "boundary-1",
 				},
 			},
+		},
+		{
+			name: "get instance group",
+			req: &pb.ListHostsRequest{
+				Catalog: &hostcatalogs.HostCatalog{
+					Attrs: hostCatalogAttributes,
+				},
+				Sets: []*hostsets.HostSet{
+					{
+						Id: "get-instance-group",
+						Attrs: &hostsets.HostSet_Attributes{
+							Attributes: wrapMap(t, map[string]interface{}{
+								ConstInstanceGroup: "boundary-servers",
+							}),
+						},
+					},
+				},
+			},
+			expected: []*pb.ListHostsResponseHost{
+				{
+					Name: "boundary-0",
+				},
+				{
+					Name: "boundary-1",
+				},
+				{
+					Name: "boundary-2",
+				},
+			},
+		},
+		{
+			name: "invalid filter",
+			req: &pb.ListHostsRequest{
+				Catalog: &hostcatalogs.HostCatalog{
+					Attrs: hostCatalogAttributes,
+				},
+				Sets: []*hostsets.HostSet{
+					{
+						Id: "invalid-filter",
+						Attrs: &hostsets.HostSet_Attributes{
+							Attributes: wrapMap(t, map[string]interface{}{
+								ConstListInstancesFilter: "not-a-filter",
+							}),
+						},
+					},
+				},
+			},
+			expectedErr: "Invalid list filter expression",
 		},
 	}
 
@@ -324,6 +372,80 @@ func TestCreateSet(t *testing.T) {
 			},
 			expectedErr: "set is nil",
 		},
+		{
+			name: "only allow instance group or filter, not both",
+			req: &pb.OnCreateSetRequest{
+				Set: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstListInstancesFilter: structpb.NewStringValue("status=RUNNING"),
+								ConstInstanceGroup:       structpb.NewStringValue("test"),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "attributes: must set instance group or filter",
+		},
+		{
+			name: "empty filter",
+			req: &pb.OnCreateSetRequest{
+				Set: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstListInstancesFilter: structpb.NewStringValue(""),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "attributes.filter: must not be empty",
+		},
+		{
+			name: "empty instance group",
+			req: &pb.OnCreateSetRequest{
+				Set: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstInstanceGroup: structpb.NewStringValue(""),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "attributes.instance_group: must not be empty",
+		},
+		{
+			name: "good filter",
+			req: &pb.OnCreateSetRequest{
+				Set: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstInstanceGroup: structpb.NewStringValue("status=RUNNING"),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "good instance group",
+			req: &pb.OnCreateSetRequest{
+				Set: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstInstanceGroup: structpb.NewStringValue("test"),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -332,6 +454,128 @@ func TestCreateSet(t *testing.T) {
 			require := require.New(t)
 
 			_, err := p.OnCreateSet(ctx, tc.req)
+			if tc.expectedErr != "" {
+				require.Contains(err.Error(), tc.expectedErr)
+				return
+			}
+
+			require.NoError(err)
+		})
+	}
+}
+
+func TestUpdateSet(t *testing.T) {
+	ctx := context.Background()
+	p := &GooglePlugin{}
+
+	cases := []struct {
+		name        string
+		req         *pb.OnUpdateSetRequest
+		expectedErr string
+	}{
+		{
+			name:        "nil set",
+			req:         &pb.OnUpdateSetRequest{},
+			expectedErr: "set is nil",
+		},
+		{
+			name: "nil set",
+			req: &pb.OnUpdateSetRequest{
+				Catalog: &hostcatalogs.HostCatalog{
+					Attrs: &hostcatalogs.HostCatalog_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								cred.ConstProject: structpb.NewStringValue("test-project"),
+								cred.ConstZone:    structpb.NewStringValue("us-central1-a"),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "set is nil",
+		},
+		{
+			name: "only allow instance group or filter, not both",
+			req: &pb.OnUpdateSetRequest{
+				NewSet: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstListInstancesFilter: structpb.NewStringValue("status=RUNNING"),
+								ConstInstanceGroup:       structpb.NewStringValue("test"),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "attributes: must set instance group or filter",
+		},
+		{
+			name: "empty filter",
+			req: &pb.OnUpdateSetRequest{
+				NewSet: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstListInstancesFilter: structpb.NewStringValue(""),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "attributes.filter: must not be empty",
+		},
+		{
+			name: "empty instance group",
+			req: &pb.OnUpdateSetRequest{
+				NewSet: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstInstanceGroup: structpb.NewStringValue(""),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "attributes.instance_group: must not be empty",
+		},
+		{
+			name: "good filter",
+			req: &pb.OnUpdateSetRequest{
+				NewSet: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstInstanceGroup: structpb.NewStringValue("status=RUNNING"),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "good instance group",
+			req: &pb.OnUpdateSetRequest{
+				NewSet: &hostsets.HostSet{
+					Attrs: &hostsets.HostSet_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								ConstInstanceGroup: structpb.NewStringValue("test"),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			require := require.New(t)
+
+			_, err := p.OnUpdateSet(ctx, tc.req)
 			if tc.expectedErr != "" {
 				require.Contains(err.Error(), tc.expectedErr)
 				return
