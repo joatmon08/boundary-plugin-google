@@ -209,7 +209,7 @@ func TestCreateCatalog(t *testing.T) {
 			}
 
 			require.NoError(err)
-			require.Equal(actual.GetPersisted().Secrets, tc.expected.GetSecrets())
+			require.Nil(actual.GetPersisted().Secrets)
 		})
 	}
 }
@@ -290,6 +290,54 @@ func TestUpdateCatalog(t *testing.T) {
 
 			require.NoError(err)
 			require.Equal(actual.GetPersisted().Secrets, tc.expected.GetSecrets())
+		})
+	}
+}
+
+func TestCreateSet(t *testing.T) {
+	ctx := context.Background()
+	p := &GooglePlugin{}
+
+	cases := []struct {
+		name        string
+		req         *pb.OnCreateSetRequest
+		expectedErr string
+	}{
+		{
+			name:        "nil set",
+			req:         &pb.OnCreateSetRequest{},
+			expectedErr: "set is nil",
+		},
+		{
+			name: "nil set",
+			req: &pb.OnCreateSetRequest{
+				Catalog: &hostcatalogs.HostCatalog{
+					Attrs: &hostcatalogs.HostCatalog_Attributes{
+						Attributes: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								cred.ConstProject: structpb.NewStringValue("test-project"),
+								cred.ConstZone:    structpb.NewStringValue("us-central1-a"),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "set is nil",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			require := require.New(t)
+
+			_, err := p.OnCreateSet(ctx, tc.req)
+			if tc.expectedErr != "" {
+				require.Contains(err.Error(), tc.expectedErr)
+				return
+			}
+
+			require.NoError(err)
 		})
 	}
 }

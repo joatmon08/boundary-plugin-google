@@ -57,11 +57,41 @@ func (p *GooglePlugin) OnUpdateCatalog(_ context.Context, req *pb.OnUpdateCatalo
 	}, nil
 }
 
+func (p *GooglePlugin) OnDeleteCatalog(ctx context.Context, req *pb.OnDeleteCatalogRequest) (*pb.OnDeleteCatalogResponse, error) {
+	catalog := req.GetCatalog()
+	if catalog == nil {
+		return nil, status.Error(codes.InvalidArgument, "new catalog is nil")
+	}
+
+	attrs := catalog.GetAttributes()
+	if attrs == nil {
+		return nil, status.Error(codes.InvalidArgument, "new catalog missing attributes")
+	}
+
+	if _, err := getCatalogAttributes(attrs); err != nil {
+		return nil, err
+	}
+
+	return &pb.OnDeleteCatalogResponse{}, nil
+}
+
 func (p *GooglePlugin) OnCreateSet(_ context.Context, req *pb.OnCreateSetRequest) (*pb.OnCreateSetResponse, error) {
 	if err := validateSet(req.GetSet()); err != nil {
 		return nil, err
 	}
 	return &pb.OnCreateSetResponse{}, nil
+}
+
+func (p *GooglePlugin) OnUpdateSet(_ context.Context, req *pb.OnUpdateSetRequest) (*pb.OnUpdateSetResponse, error) {
+	if err := validateSet(req.GetNewSet()); err != nil {
+		return nil, err
+	}
+	return &pb.OnUpdateSetResponse{}, nil
+}
+
+// OnDeleteSet is called when a dynamic host set is deleted.
+func (p *GooglePlugin) OnDeleteSet(ctx context.Context, req *pb.OnDeleteSetRequest) (*pb.OnDeleteSetResponse, error) {
+	return &pb.OnDeleteSetResponse{}, nil
 }
 
 func (p *GooglePlugin) ListHosts(ctx context.Context, req *pb.ListHostsRequest) (*pb.ListHostsResponse, error) {
@@ -131,35 +161,6 @@ func (p *GooglePlugin) ListHosts(ctx context.Context, req *pb.ListHostsRequest) 
 		Hosts: hosts,
 	}, nil
 }
-
-// func validateCatalog(c *hostcatalogs.HostCatalog) error {
-// 	if c == nil {
-// 		return status.Error(codes.InvalidArgument, "catalog is nil")
-// 	}
-// 	var attrs CatalogAttributes
-// 	attrMap := c.GetAttributes().AsMap()
-// 	if err := mapstructure.Decode(attrMap, &attrs); err != nil {
-// 		return status.Errorf(codes.InvalidArgument, "error decoding catalog attributes: %s", err)
-// 	}
-// 	badFields := make(map[string]string)
-// 	if len(attrs.Project) == 0 {
-// 		badFields[fmt.Sprintf("attributes.%s", cred.ConstProject)] = "This is a required field."
-// 	}
-// 	if len(attrs.Zone) == 0 {
-// 		badFields[fmt.Sprintf("attributes.%s", cred.ConstZone)] = "This is a required field."
-// 	}
-
-// 	for f := range attrMap {
-// 		if _, ok := cred.AllowedCatalogFields[f]; !ok {
-// 			badFields[fmt.Sprintf("attributes.%s", f)] = "Unrecognized field."
-// 		}
-// 	}
-
-// 	if len(badFields) > 0 {
-// 		return errors.InvalidArgumentError("Invalid arguments in the new catalog", badFields)
-// 	}
-// 	return nil
-// }
 
 func validateSet(s *hostsets.HostSet) error {
 	if s == nil {
