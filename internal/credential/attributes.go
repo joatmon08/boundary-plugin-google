@@ -3,8 +3,8 @@ package credential
 import (
 	"fmt"
 
-	"github.com/joatmon08/boundary-plugin-google/internal/errors"
-	"github.com/joatmon08/boundary-plugin-google/internal/values"
+	"github.com/chpag/boundary-plugin-google/internal/errors"
+	"github.com/chpag/boundary-plugin-google/internal/values"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
