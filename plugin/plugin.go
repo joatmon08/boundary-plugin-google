@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/boundary/sdk/pbs/controller/api/resources/hostsets"
 	pb "github.com/hashicorp/boundary/sdk/pbs/plugin"
-	errors "github.com/joatmon08/boundary-plugin-google/internal/errors"
+	errors "github.com/chpag/boundary-plugin-google/internal/errors"
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
