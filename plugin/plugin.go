@@ -48,13 +48,6 @@ func (p *GooglePlugin) OnUpdateCatalog(_ context.Context, req *pb.OnUpdateCatalo
 		return nil, status.Error(codes.FailedPrecondition, "current catalog is nil")
 	}
 
-	secrets := req.GetNewCatalog().GetSecrets()
-	if secrets == nil {
-		// If new secrets weren't passed in, don't rotate what we have on
-		// update.
-		return &pb.OnUpdateCatalogResponse{}, nil
-	}
-
 	return &pb.OnUpdateCatalogResponse{
 		Persisted: &pb.HostCatalogPersisted{
 			Secrets: nil,
