@@ -10,6 +10,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"log/slog"
 )
 
 type GooglePlugin struct {
@@ -21,6 +22,7 @@ var (
 )
 
 func (p *GooglePlugin) OnCreateCatalog(_ context.Context, req *pb.OnCreateCatalogRequest) (*pb.OnCreateCatalogResponse, error) {
+  log.Println("DEBUG GCP Disco:starting OnCreateCatalog")
 	catalog := req.GetCatalog()
 	if catalog == nil {
 		return nil, status.Error(codes.InvalidArgument, "catalog is nil")
@@ -43,6 +45,7 @@ func (p *GooglePlugin) OnCreateCatalog(_ context.Context, req *pb.OnCreateCatalo
 }
 
 func (p *GooglePlugin) OnUpdateCatalog(_ context.Context, req *pb.OnUpdateCatalogRequest) (*pb.OnUpdateCatalogResponse, error) {
+  log.Println("DEBUG GCP Disco:starting OnUpdateCatalog")
 	currentCatalog := req.GetCurrentCatalog()
 	if currentCatalog == nil {
 		return nil, status.Error(codes.FailedPrecondition, "current catalog is nil")
@@ -56,6 +59,7 @@ func (p *GooglePlugin) OnUpdateCatalog(_ context.Context, req *pb.OnUpdateCatalo
 }
 
 func (p *GooglePlugin) OnDeleteCatalog(ctx context.Context, req *pb.OnDeleteCatalogRequest) (*pb.OnDeleteCatalogResponse, error) {
+    log.Println("DEBUG GCP Disco:starting OnDeleteCatalog")
 	catalog := req.GetCatalog()
 	if catalog == nil {
 		return nil, status.Error(codes.InvalidArgument, "new catalog is nil")
@@ -74,6 +78,7 @@ func (p *GooglePlugin) OnDeleteCatalog(ctx context.Context, req *pb.OnDeleteCata
 }
 
 func (p *GooglePlugin) OnCreateSet(_ context.Context, req *pb.OnCreateSetRequest) (*pb.OnCreateSetResponse, error) {
+    log.Println("DEBUG GCP Disco:starting OnCreateSet")
 	if err := validateSet(req.GetSet()); err != nil {
 		return nil, err
 	}
@@ -81,6 +86,7 @@ func (p *GooglePlugin) OnCreateSet(_ context.Context, req *pb.OnCreateSetRequest
 }
 
 func (p *GooglePlugin) OnUpdateSet(_ context.Context, req *pb.OnUpdateSetRequest) (*pb.OnUpdateSetResponse, error) {
+    log.Println("DEBUG GCP Disco:starting OnUpdateSet")
 	if err := validateSet(req.GetNewSet()); err != nil {
 		return nil, err
 	}
@@ -89,10 +95,12 @@ func (p *GooglePlugin) OnUpdateSet(_ context.Context, req *pb.OnUpdateSetRequest
 
 // OnDeleteSet is called when a dynamic host set is deleted.
 func (p *GooglePlugin) OnDeleteSet(ctx context.Context, req *pb.OnDeleteSetRequest) (*pb.OnDeleteSetResponse, error) {
+    log.Println("DEBUG GCP Disco:starting OnDeleteSet")
 	return &pb.OnDeleteSetResponse{}, nil
 }
 
 func (p *GooglePlugin) ListHosts(ctx context.Context, req *pb.ListHostsRequest) (*pb.ListHostsResponse, error) {
+    log.Println("DEBUG GCP Disco:starting ListHosts")
 	catalog := req.GetCatalog()
 	if catalog == nil {
 		return nil, status.Error(codes.InvalidArgument, "catalog is nil")
@@ -147,6 +155,7 @@ func (p *GooglePlugin) ListHosts(ctx context.Context, req *pb.ListHostsRequest) 
 }
 
 func validateSet(s *hostsets.HostSet) error {
+    log.Println("DEBUG GCP Disco:starting validateSet")
 	if s == nil {
 		return status.Error(codes.InvalidArgument, "set is nil")
 	}
