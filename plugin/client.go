@@ -33,7 +33,7 @@ func getInstances(ctx context.Context, setId string, request *computepb.ListInst
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "error listing instances for host set id %q: %s", setId, err)
 		}
-		host, err := instanceToHost(resp)
+		host, err := instanceToHost(resp, setId)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "error processing host results for host set id %q: %s", setId, err)
 		}
@@ -80,7 +80,7 @@ func getInstancesForInstanceGroup(ctx context.Context, setId string, setAttr *Se
 			return nil, status.Errorf(codes.InvalidArgument, "error getting instance %s for instance group %s in host set id %q: %s", resp.GetInstance(), instanceGroupName, setId, err)
 		}
 
-		host, err := instanceToHost(instance)
+		host, err := instanceToHost(instance,setId)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "error processing host results for instance %s for instance group %s in host set id %q: %s", resp.GetInstance(), instanceGroupName, setId, err)
 		}
@@ -89,7 +89,7 @@ func getInstancesForInstanceGroup(ctx context.Context, setId string, setAttr *Se
 	return hosts, nil
 }
 
-func instanceToHost(instance *computepb.Instance) (*pb.ListHostsResponseHost, error) {
+func instanceToHost(instance *computepb.Instance,setId string) (*pb.ListHostsResponseHost, error) {
 	if instance.GetSelfLink() == "" {
 		return nil, errors.New("response integrity error: missing instance self-link")
 	}
@@ -98,6 +98,7 @@ func instanceToHost(instance *computepb.Instance) (*pb.ListHostsResponseHost, er
 
 	result.ExternalId = instance.GetSelfLink()
 	result.ExternalName = instance.GetName()
+	result.SetIds = append(result.SetIds, setId)
 
 	// Now go through all of the interfaces and log the IP address of
 	// every interface.
